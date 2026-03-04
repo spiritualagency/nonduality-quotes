@@ -53,27 +53,27 @@ const QUOTES = [
 ];
 
 const CATEGORIES = [
-	{ label: __( 'All Categories', 'nonduality-quotes' ), value: 'all' },
-	{ label: __( 'Advaita Vedanta', 'nonduality-quotes' ), value: 'Advaita Vedanta' },
-	{ label: __( 'Buddhism', 'nonduality-quotes' ), value: 'Buddhism' },
-	{ label: __( 'Taoism', 'nonduality-quotes' ), value: 'Taoism' },
-	{ label: __( 'Christian Mysticism', 'nonduality-quotes' ), value: 'Christian Mysticism' },
-	{ label: __( 'Sufism', 'nonduality-quotes' ), value: 'Sufism' },
-	{ label: __( 'Zen', 'nonduality-quotes' ), value: 'Zen' },
-	{ label: __( 'Inspirational', 'nonduality-quotes' ), value: 'Inspirational' },
+	{ label: __( 'All Categories', 'the-spiritual-agency-nonduality-quotes' ), value: 'all' },
+	{ label: __( 'Advaita Vedanta', 'the-spiritual-agency-nonduality-quotes' ), value: 'Advaita Vedanta' },
+	{ label: __( 'Buddhism', 'the-spiritual-agency-nonduality-quotes' ), value: 'Buddhism' },
+	{ label: __( 'Taoism', 'the-spiritual-agency-nonduality-quotes' ), value: 'Taoism' },
+	{ label: __( 'Christian Mysticism', 'the-spiritual-agency-nonduality-quotes' ), value: 'Christian Mysticism' },
+	{ label: __( 'Sufism', 'the-spiritual-agency-nonduality-quotes' ), value: 'Sufism' },
+	{ label: __( 'Zen', 'the-spiritual-agency-nonduality-quotes' ), value: 'Zen' },
+	{ label: __( 'Inspirational', 'the-spiritual-agency-nonduality-quotes' ), value: 'Inspirational' },
 ];
 
 const FONT_SIZES = [
-	{ label: __( 'Small', 'nonduality-quotes' ), value: 'small' },
-	{ label: __( 'Medium', 'nonduality-quotes' ), value: 'medium' },
-	{ label: __( 'Large', 'nonduality-quotes' ), value: 'large' },
+	{ label: __( 'Small', 'the-spiritual-agency-nonduality-quotes' ), value: 'small' },
+	{ label: __( 'Medium', 'the-spiritual-agency-nonduality-quotes' ), value: 'medium' },
+	{ label: __( 'Large', 'the-spiritual-agency-nonduality-quotes' ), value: 'large' },
 ];
 
 const COLOR_SCHEMES = [
-	{ label: __( 'Light', 'nonduality-quotes' ), value: 'light' },
-	{ label: __( 'Dark', 'nonduality-quotes' ), value: 'dark' },
-	{ label: __( 'Warm', 'nonduality-quotes' ), value: 'warm' },
-	{ label: __( 'Serene', 'nonduality-quotes' ), value: 'serene' },
+	{ label: __( 'Light', 'the-spiritual-agency-nonduality-quotes' ), value: 'light' },
+	{ label: __( 'Dark', 'the-spiritual-agency-nonduality-quotes' ), value: 'dark' },
+	{ label: __( 'Warm', 'the-spiritual-agency-nonduality-quotes' ), value: 'warm' },
+	{ label: __( 'Serene', 'the-spiritual-agency-nonduality-quotes' ), value: 'serene' },
 ];
 
 function getFilteredQuotes( category ) {
@@ -127,39 +127,39 @@ export default function Edit( { attributes, setAttributes } ) {
 				/>
 			</BlockControls>
 			<InspectorControls>
-				<PanelBody title={ __( 'Quote Settings', 'nonduality-quotes' ) }>
+				<PanelBody title={ __( 'Quote Settings', 'the-spiritual-agency-nonduality-quotes' ) }>
 					<SelectControl
-						label={ __( 'Category', 'nonduality-quotes' ) }
+						label={ __( 'Category', 'the-spiritual-agency-nonduality-quotes' ) }
 						value={ category }
 						options={ CATEGORIES }
 						onChange={ ( value ) => setAttributes( { category: value } ) }
 					/>
 					<ToggleControl
-						label={ __( 'Show Category Label', 'nonduality-quotes' ) }
+						label={ __( 'Show Category Label', 'the-spiritual-agency-nonduality-quotes' ) }
 						checked={ showCategory }
 						onChange={ ( value ) => setAttributes( { showCategory: value } ) }
 					/>
 					<ToggleControl
-						label={ __( 'Show New Quote Button', 'nonduality-quotes' ) }
+						label={ __( 'Show New Quote Button', 'the-spiritual-agency-nonduality-quotes' ) }
 						checked={ showButton }
 						onChange={ ( value ) => setAttributes( { showButton: value } ) }
 					/>
 					<ToggleControl
-						label={ __( 'Show Nature Background', 'nonduality-quotes' ) }
-						help={ __( 'Requires a Pixabay API key in Settings > Nonduality Quotes.', 'nonduality-quotes' ) }
+						label={ __( 'Show Nature Background', 'the-spiritual-agency-nonduality-quotes' ) }
+						help={ __( 'Requires a Pixabay API key in Settings > Nonduality Quotes.', 'the-spiritual-agency-nonduality-quotes' ) }
 						checked={ showBackground }
 						onChange={ ( value ) => setAttributes( { showBackground: value } ) }
 					/>
 				</PanelBody>
-				<PanelBody title={ __( 'Appearance', 'nonduality-quotes' ) } initialOpen={ false }>
+				<PanelBody title={ __( 'Appearance', 'the-spiritual-agency-nonduality-quotes' ) } initialOpen={ false }>
 					<SelectControl
-						label={ __( 'Font Size', 'nonduality-quotes' ) }
+						label={ __( 'Font Size', 'the-spiritual-agency-nonduality-quotes' ) }
 						value={ fontSize }
 						options={ FONT_SIZES }
 						onChange={ ( value ) => setAttributes( { fontSize: value } ) }
 					/>
 					<SelectControl
-						label={ __( 'Color Scheme', 'nonduality-quotes' ) }
+						label={ __( 'Color Scheme', 'the-spiritual-agency-nonduality-quotes' ) }
 						value={ colorScheme }
 						options={ COLOR_SCHEMES }
 						onChange={ ( value ) => setAttributes( { colorScheme: value } ) }
@@ -170,7 +170,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				<div className={ `tnq-quote-card${ fading ? ' tnq-fading' : '' }` }>
 					<div className="tnq-quote-icon" aria-hidden="true">&ldquo;</div>
 					<blockquote className="tnq-quote-text">
-						{ quote ? quote.text : __( 'No quotes found for this category.', 'nonduality-quotes' ) }
+						{ quote ? quote.text : __( 'No quotes found for this category.', 'the-spiritual-agency-nonduality-quotes' ) }
 					</blockquote>
 					{ quote && (
 						<div className="tnq-quote-meta">
@@ -187,16 +187,16 @@ export default function Edit( { attributes, setAttributes } ) {
 								className="tnq-new-quote-btn"
 								onClick={ handleNewQuote }
 							>
-								{ __( 'New Quote', 'nonduality-quotes' ) }
+								{ __( 'New Quote', 'the-spiritual-agency-nonduality-quotes' ) }
 							</button>
 						) }
 						<button
 							type="button"
 							className="tnq-new-quote-btn tnq-share-btn"
 							onClick={ () => {} }
-							title={ __( 'Share', 'nonduality-quotes' ) }
+							title={ __( 'Share', 'the-spiritual-agency-nonduality-quotes' ) }
 						>
-							{ __( 'Share', 'nonduality-quotes' ) }
+							{ __( 'Share', 'the-spiritual-agency-nonduality-quotes' ) }
 						</button>
 					</div>
 				</div>

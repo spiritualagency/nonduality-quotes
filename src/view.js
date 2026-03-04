@@ -247,7 +247,7 @@ if ( typeof tnqCustomQuotes !== 'undefined' && Array.isArray( tnqCustomQuotes ) 
 }
 
 document.addEventListener( 'DOMContentLoaded', function() {
-	var blocks = document.querySelectorAll( '.wp-block-spiritual-agency-nonduality-quotes' );
+	var blocks = document.querySelectorAll( '.wp-block-the-spiritual-agency-block-the-spiritual-agency-nonduality-quotes' );
 
 	blocks.forEach( function( block ) {
 		var category = block.getAttribute( 'data-category' ) || 'all';

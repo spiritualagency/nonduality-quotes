@@ -1,62 +1,62 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "spiritual-agency/nonduality-quotes",
-	"version": "0.1.0",
-	"title": "Nonduality Spiritual Quotes Block",
-	"category": "widgets",
-	"icon": "format-quote",
-	"description": "Displays curated nonduality and spiritual quotes from traditions including Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, and Inspirational.",
-	"example": {
-		"attributes": {
-			"category": "all",
-			"fontSize": "medium",
-			"textAlign": "center",
-			"showCategory": true,
-			"colorScheme": "light"
-		}
-	},
-	"attributes": {
-		"category": {
-			"type": "string",
-			"default": "all"
-		},
-		"fontSize": {
-			"type": "string",
-			"default": "medium"
-		},
-		"textAlign": {
-			"type": "string",
-			"default": "center"
-		},
-		"showCategory": {
-			"type": "boolean",
-			"default": true
-		},
-		"showButton": {
-			"type": "boolean",
-			"default": true
-		},
-		"colorScheme": {
-			"type": "string",
-			"default": "light"
-		},
-		"showBackground": {
-			"type": "boolean",
-			"default": true
-		}
-	},
-	"supports": {
-		"html": false,
-		"spacing": {
-			"padding": true,
-			"margin": true
-		}
-	},
-	"textdomain": "nonduality-quotes",
-	"editorScript": "file:./index.js",
-	"editorStyle": "file:./index.css",
-	"style": "file:./style-index.css",
-	"viewScript": "file:./view.js",
-	"render": "file:./render.php"
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "the-spiritual-agency/block-the-spiritual-agency-nonduality-quotes",
+  "version": "0.1.0",
+  "title": "Nonduality Spiritual Quotes Block",
+  "category": "widgets",
+  "icon": "format-quote",
+  "description": "Displays curated nonduality and spiritual quotes from traditions including Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, and Inspirational.",
+  "example": {
+    "attributes": {
+      "category": "all",
+      "fontSize": "medium",
+      "textAlign": "center",
+      "showCategory": true,
+      "colorScheme": "light"
+    }
+  },
+  "attributes": {
+    "category": {
+      "type": "string",
+      "default": "all"
+    },
+    "fontSize": {
+      "type": "string",
+      "default": "medium"
+    },
+    "textAlign": {
+      "type": "string",
+      "default": "center"
+    },
+    "showCategory": {
+      "type": "boolean",
+      "default": true
+    },
+    "showButton": {
+      "type": "boolean",
+      "default": true
+    },
+    "colorScheme": {
+      "type": "string",
+      "default": "light"
+    },
+    "showBackground": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "supports": {
+    "html": false,
+    "spacing": {
+      "padding": true,
+      "margin": true
+    }
+  },
+  "textdomain": "the-spiritual-agency-nonduality-quotes-block-wp",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js",
+  "render": "file:./render.php"
 }
