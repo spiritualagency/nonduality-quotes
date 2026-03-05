@@ -29,15 +29,15 @@ $extra_classes = sprintf(
 );
 
 $wrapper_attributes = get_block_wrapper_attributes( array(
-	'class'                => $extra_classes,
-	'data-category'        => esc_attr( $category ),
-	'data-show-category'   => $show_category ? 'true' : 'false',
-	'data-show-button'     => $show_button ? 'true' : 'false',
+	'class'               => $extra_classes,
+	'data-category'       => esc_attr( $category ),
+	'data-show-category'  => $show_category ? 'true' : 'false',
+	'data-show-button'    => $show_button ? 'true' : 'false',
 	'data-show-background' => $show_background ? 'true' : 'false',
-	'data-pixabay-key'     => ( $show_background && ! empty( $api_key ) ) ? esc_attr( $api_key ) : '',
+	'data-pixabay-key'    => ( $show_background && ! empty( $api_key ) ) ? esc_attr( $api_key ) : '',
 ) );
 ?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output is safe. ?>>
+<div <?php echo $wrapper_attributes; ?>>
 	<div class="tnq-quote-card">
 		<div class="tnq-bg-image" aria-hidden="true"></div>
 		<div class="tnq-bg-overlay" aria-hidden="true"></div>

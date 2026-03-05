@@ -1,7 +1,7 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "spiritual-agency/nonduality-quotes",
+	"name": "telex/block-telex-nonduality-quotes",
 	"version": "0.1.0",
 	"title": "Nonduality Spiritual Quotes Block",
 	"category": "widgets",
@@ -53,7 +53,7 @@
 			"margin": true
 		}
 	},
-	"textdomain": "nonduality-quotes",
+	"textdomain": "telex-nonduality-quotes-block-wp",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",

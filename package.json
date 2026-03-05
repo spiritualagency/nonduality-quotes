@@ -1,8 +1,9 @@
+
 {
-	"name": "nonduality-quotes",
+	"name": "telex-nonduality-quotes",
 	"version": "0.1.0",
 	"description": "A block that displays curated nonduality and spiritual quotes from traditions including Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, and Inspirational.",
-	"author": "Vikas Pandey and The Spiritual Agency",
+	"author": "Vikas Pandey and The Spiritual Agency®",
 	"license": "GPL-2.0-or-later",
 	"main": "build/index.js",
 	"scripts": {

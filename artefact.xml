@@ -1,0 +1,1702 @@
+<?xml version="1.0"?><artefact xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="artefact.xsd" name="Nonduality Spiritual Quotes Block" slug="telex-nonduality-quotes" type="code-package" schemaVersion="2">
+  <file path="readme.txt">
+    <description>This file contains the readme information for the block.</description>
+    <content><![CDATA[
+=== Nonduality Spiritual Quotes Block ===
+
+Contributors:      Vikas Pandey and The Spiritual Agency®
+Tags:              block, quotes, nonduality, spiritual, wisdom
+Tested up to:      6.8
+Stable tag:        0.1.0
+License:           GPLv2 or later
+License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+A beautiful block that displays curated nonduality and spiritual quotes from traditions including Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, and more.
+
+== Description ==
+
+The Nonduality Spiritual Quotes Block brings timeless wisdom directly into your WordPress site. It features a curated collection of profound quotes from the world's great nondual and mystical traditions.
+
+**Features:**
+
+* Over 30 carefully selected quotes from renowned spiritual teachers
+* Six tradition categories: Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, and Inspirational
+* Filter quotes by category or display from all traditions
+* "New Quote" button lets visitors discover fresh wisdom with each click
+* Smooth fade transition between quotes
+* Customizable appearance: font size, text alignment, and color scheme
+* Shows author name and tradition category with each quote
+* Fully responsive design
+* Works beautifully in both the editor and on the front end
+
+== Installation ==
+
+1. Upload the plugin files to the `/wp-content/plugins/telex-nonduality-quotes` directory, or install the plugin through the WordPress plugins screen directly.
+2. Activate the plugin through the 'Plugins' screen in WordPress.
+3. Add the "Nonduality Spiritual Quotes Block" via the block editor.
+
+== Frequently Asked Questions ==
+
+= Can I filter quotes by tradition? =
+
+Yes! Use the block sidebar to select a specific category such as Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, or Inspirational. You can also choose "All Categories" to display quotes from every tradition.
+
+= Can visitors get a new quote? =
+
+Yes, a "New Quote" button appears on the front end allowing visitors to cycle through quotes with a smooth fade animation.
+
+== Screenshots ==
+
+1. The block displaying a quote in the editor with sidebar controls.
+2. Front-end view with the New Quote button.
+
+== Changelog ==
+
+= 0.1.0 =
+* Initial release with 30+ curated nonduality quotes across six traditions.
+]]></content>
+  </file>
+  <file path="telex-nonduality-quotes.php">
+    <description>Main plugin file that registers the block.</description>
+    <content><![CDATA[<?php
+/**
+ * Plugin Name:       Nonduality Spiritual Quotes Block
+ * Description:       Displays curated nonduality and spiritual quotes from traditions including Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, Zen, and Inspirational. Supports Pixabay nature backgrounds.
+ * Version:           0.1.0
+ * Requires at least: 6.1
+ * Requires PHP:      7.0
+ * Author:            Vikas Pandey and The Spiritual Agency®
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       telex-nonduality-quotes
+ *
+ * @package NondualityQuotes
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! function_exists( 'telex_nonduality_quotes_block_init' ) ) {
+	function telex_nonduality_quotes_block_init() {
+		register_block_type( __DIR__ . '/build/' );
+	}
+}
+add_action( 'init', 'telex_nonduality_quotes_block_init' );
+
+if ( ! function_exists( 'telex_nonduality_quotes_register_settings' ) ) {
+	function telex_nonduality_quotes_register_settings() {
+		register_setting( 'telex_nonduality_quotes_settings', 'tnq_pixabay_api_key', array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'default'           => '',
+		) );
+		register_setting( 'telex_nonduality_quotes_settings', 'tnq_custom_quotes', array(
+			'type'              => 'array',
+			'sanitize_callback' => 'telex_nonduality_quotes_sanitize_custom_quotes',
+			'default'           => array(),
+		) );
+	}
+}
+add_action( 'admin_init', 'telex_nonduality_quotes_register_settings' );
+
+if ( ! function_exists( 'telex_nonduality_quotes_sanitize_custom_quotes' ) ) {
+	function telex_nonduality_quotes_sanitize_custom_quotes( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+		$sanitized = array();
+		foreach ( $value as $quote ) {
+			if ( ! empty( $quote['text'] ) && ! empty( $quote['author'] ) && ! empty( $quote['category'] ) ) {
+				$sanitized[] = array(
+					'text'     => sanitize_textarea_field( $quote['text'] ),
+					'author'   => sanitize_text_field( $quote['author'] ),
+					'category' => sanitize_text_field( $quote['category'] ),
+				);
+			}
+		}
+		return $sanitized;
+	}
+}
+
+if ( ! function_exists( 'telex_nonduality_quotes_settings_page' ) ) {
+	function telex_nonduality_quotes_settings_page() {
+		add_options_page(
+			__( 'Nonduality Quotes Settings', 'telex-nonduality-quotes' ),
+			__( 'Nonduality Quotes', 'telex-nonduality-quotes' ),
+			'manage_options',
+			'telex-nonduality-quotes',
+			'telex_nonduality_quotes_settings_page_html'
+		);
+	}
+}
+add_action( 'admin_menu', 'telex_nonduality_quotes_settings_page' );
+
+if ( ! function_exists( 'telex_nonduality_quotes_handle_actions' ) ) {
+	function telex_nonduality_quotes_handle_actions() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Handle adding a single quote.
+		if ( isset( $_POST['tnq_add_quote_nonce'] ) && wp_verify_nonce( $_POST['tnq_add_quote_nonce'], 'tnq_add_quote' ) ) {
+			$text     = isset( $_POST['tnq_new_quote_text'] ) ? sanitize_textarea_field( wp_unslash( $_POST['tnq_new_quote_text'] ) ) : '';
+			$author   = isset( $_POST['tnq_new_quote_author'] ) ? sanitize_text_field( wp_unslash( $_POST['tnq_new_quote_author'] ) ) : '';
+			$category = isset( $_POST['tnq_new_quote_category'] ) ? sanitize_text_field( wp_unslash( $_POST['tnq_new_quote_category'] ) ) : '';
+
+			if ( ! empty( $text ) && ! empty( $author ) && ! empty( $category ) ) {
+				$custom_quotes   = get_option( 'tnq_custom_quotes', array() );
+				$custom_quotes[] = array(
+					'text'     => $text,
+					'author'   => $author,
+					'category' => $category,
+				);
+				update_option( 'tnq_custom_quotes', $custom_quotes );
+				add_settings_error( 'tnq_messages', 'tnq_quote_added', __( 'Quote added successfully.', 'telex-nonduality-quotes' ), 'success' );
+			} else {
+				add_settings_error( 'tnq_messages', 'tnq_quote_error', __( 'All fields are required to add a quote.', 'telex-nonduality-quotes' ), 'error' );
+			}
+		}
+
+		// Handle deleting a quote.
+		if ( isset( $_GET['tnq_delete'] ) && isset( $_GET['_wpnonce'] ) ) {
+			if ( wp_verify_nonce( $_GET['_wpnonce'], 'tnq_delete_quote' ) ) {
+				$index         = absint( $_GET['tnq_delete'] );
+				$custom_quotes = get_option( 'tnq_custom_quotes', array() );
+				if ( isset( $custom_quotes[ $index ] ) ) {
+					array_splice( $custom_quotes, $index, 1 );
+					update_option( 'tnq_custom_quotes', $custom_quotes );
+					add_settings_error( 'tnq_messages', 'tnq_quote_deleted', __( 'Quote deleted successfully.', 'telex-nonduality-quotes' ), 'success' );
+				}
+				// Redirect to remove the query args.
+				wp_safe_redirect( admin_url( 'options-general.php?page=telex-nonduality-quotes&tab=manage' ) );
+				exit;
+			}
+		}
+
+		// Handle CSV upload.
+		if ( isset( $_POST['tnq_csv_upload_nonce'] ) && wp_verify_nonce( $_POST['tnq_csv_upload_nonce'], 'tnq_csv_upload' ) ) {
+			if ( ! empty( $_FILES['tnq_csv_file']['tmp_name'] ) && $_FILES['tnq_csv_file']['error'] === UPLOAD_ERR_OK ) {
+				$file   = $_FILES['tnq_csv_file']['tmp_name'];
+				$handle = fopen( $file, 'r' );
+				if ( $handle ) {
+					$custom_quotes = get_option( 'tnq_custom_quotes', array() );
+					$count         = 0;
+					$row_number    = 0;
+					while ( ( $data = fgetcsv( $handle, 0, ',' ) ) !== false ) {
+						$row_number++;
+						// Skip header row if it looks like one.
+						if ( $row_number === 1 ) {
+							$first_cell = strtolower( trim( $data[0] ) );
+							if ( in_array( $first_cell, array( 'author', 'quote', 'text', 'category' ), true ) ) {
+								continue;
+							}
+						}
+						if ( count( $data ) >= 3 ) {
+							$author   = sanitize_text_field( trim( $data[0] ) );
+							$text     = sanitize_textarea_field( trim( $data[1] ) );
+							$category = sanitize_text_field( trim( $data[2] ) );
+							if ( ! empty( $text ) && ! empty( $author ) && ! empty( $category ) ) {
+								$custom_quotes[] = array(
+									'text'     => $text,
+									'author'   => $author,
+									'category' => $category,
+								);
+								$count++;
+							}
+						}
+					}
+					fclose( $handle );
+					update_option( 'tnq_custom_quotes', $custom_quotes );
+					/* translators: %d: number of quotes imported */
+					add_settings_error( 'tnq_messages', 'tnq_csv_imported', sprintf( __( '%d quotes imported from CSV.', 'telex-nonduality-quotes' ), $count ), 'success' );
+				}
+			} else {
+				add_settings_error( 'tnq_messages', 'tnq_csv_error', __( 'Please select a valid CSV file to upload.', 'telex-nonduality-quotes' ), 'error' );
+			}
+		}
+	}
+}
+add_action( 'admin_init', 'telex_nonduality_quotes_handle_actions' );
+
+if ( ! function_exists( 'telex_nonduality_quotes_settings_page_html' ) ) {
+	function telex_nonduality_quotes_settings_page_html() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'settings';
+		$categories = array(
+			'Advaita Vedanta',
+			'Buddhism',
+			'Taoism',
+			'Christian Mysticism',
+			'Sufism',
+			'Zen',
+			'Inspirational',
+		);
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+
+			<?php settings_errors( 'tnq_messages' ); ?>
+
+			<h2 class="nav-tab-wrapper">
+				<a href="<?php echo esc_url( admin_url( 'options-general.php?page=telex-nonduality-quotes&tab=settings' ) ); ?>" class="nav-tab <?php echo $active_tab === 'settings' ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Pixabay API', 'telex-nonduality-quotes' ); ?>
+				</a>
+				<a href="<?php echo esc_url( admin_url( 'options-general.php?page=telex-nonduality-quotes&tab=manage' ) ); ?>" class="nav-tab <?php echo $active_tab === 'manage' ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Manage Quotes', 'telex-nonduality-quotes' ); ?>
+				</a>
+				<a href="<?php echo esc_url( admin_url( 'options-general.php?page=telex-nonduality-quotes&tab=embed' ) ); ?>" class="nav-tab <?php echo $active_tab === 'embed' ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Embed / Daily Quote', 'telex-nonduality-quotes' ); ?>
+				</a>
+			</h2>
+
+			<?php if ( $active_tab === 'embed' ) : ?>
+				<?php
+				$rest_url   = esc_url( rest_url( 'tnq/v1/daily-quote' ) );
+				$iframe_src = "<!DOCTYPE html><html><head><meta charset='utf-8'></head><body><div id='tnq-dq' style='text-align:center'></div><script>(function(){var x=new XMLHttpRequest();x.open('GET','" . esc_js( $rest_url ) . "',true);x.onreadystatechange=function(){if(x.readyState===4&amp;&amp;x.status===200){var d=JSON.parse(x.responseText);var el=document.getElementById('tnq-dq');el.innerHTML='<blockquote style=\"margin:0 auto;text-align:center\">'+d.text+'</blockquote><cite style=\"display:block;text-align:center;margin-top:0.5em\">&mdash; '+d.author+'</cite>';}};x.send();})()</script></body></html>";
+				$embed_code = '<iframe srcdoc="' . esc_attr( $iframe_src ) . '" style="border:none;width:100%;min-height:120px;" title="Daily Spiritual Quote"></iframe>';
+				?>
+				<h3><?php esc_html_e( 'Embed Daily Quote on External Sites', 'telex-nonduality-quotes' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Copy the iframe code below and paste it into any website. It will display today\'s daily quote (text and author only) and automatically inherit the recipient site\'s CSS — no extra styles are imposed.', 'telex-nonduality-quotes' ); ?>
+				</p>
+				<p class="description" style="margin-top:6px;">
+					<?php esc_html_e( 'The quote changes once per day automatically.', 'telex-nonduality-quotes' ); ?>
+				</p>
+
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'REST Endpoint', 'telex-nonduality-quotes' ); ?></th>
+						<td>
+							<code style="display:inline-block;padding:6px 12px;background:#f0f0f0;border-radius:4px;user-select:all;"><?php echo esc_html( $rest_url ); ?></code>
+							<p class="description"><?php esc_html_e( 'Returns JSON with "text" and "author" fields. Publicly accessible, no authentication required.', 'telex-nonduality-quotes' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="tnq-embed-code"><?php esc_html_e( 'Embed Code', 'telex-nonduality-quotes' ); ?></label>
+						</th>
+						<td>
+							<textarea id="tnq-embed-code" rows="6" class="large-text code" readonly onclick="this.select()"><?php echo esc_textarea( $embed_code ); ?></textarea>
+							<p style="margin-top:8px;">
+								<button type="button" class="button button-secondary" onclick="var t=document.getElementById('tnq-embed-code');t.select();document.execCommand('copy');this.textContent='Copied!';var b=this;setTimeout(function(){b.textContent='<?php echo esc_js( __( 'Copy Embed Code', 'telex-nonduality-quotes' ) ); ?>';},2000);">
+									<?php esc_html_e( 'Copy Embed Code', 'telex-nonduality-quotes' ); ?>
+								</button>
+							</p>
+							<p class="description"><?php esc_html_e( 'This iframe uses srcdoc and fetches the daily quote from your site\'s REST API. It renders plain HTML (a blockquote and cite element) with no imposed styles, so it inherits the CSS of whatever page it\'s embedded on.', 'telex-nonduality-quotes' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<hr />
+				<h3><?php esc_html_e( 'Preview', 'telex-nonduality-quotes' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'This is how the embedded daily quote looks with default WordPress admin styles:', 'telex-nonduality-quotes' ); ?></p>
+				<div style="max-width:600px;margin:16px 0;padding:16px;border:1px solid #ddd;border-radius:8px;background:#fafafa;">
+					<?php echo $embed_code; ?>
+				</div>
+
+			<?php elseif ( $active_tab === 'settings' ) : ?>
+				<form action="options.php" method="post">
+					<?php settings_fields( 'telex_nonduality_quotes_settings' ); ?>
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">
+								<label for="tnq_pixabay_api_key"><?php esc_html_e( 'Pixabay API Key', 'telex-nonduality-quotes' ); ?></label>
+							</th>
+							<td>
+								<input type="text" id="tnq_pixabay_api_key" name="tnq_pixabay_api_key" value="<?php echo esc_attr( get_option( 'tnq_pixabay_api_key', '' ) ); ?>" class="regular-text" />
+								<p class="description">
+									<?php esc_html_e( 'Enter your Pixabay API key to enable nature background images on quote cards. Get a free key at pixabay.com/api/docs/', 'telex-nonduality-quotes' ); ?>
+								</p>
+							</td>
+						</tr>
+					</table>
+					<?php submit_button(); ?>
+				</form>
+			<?php else : ?>
+
+				<h3><?php esc_html_e( 'Add New Quote', 'telex-nonduality-quotes' ); ?></h3>
+				<form method="post" action="">
+					<?php wp_nonce_field( 'tnq_add_quote', 'tnq_add_quote_nonce' ); ?>
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">
+								<label for="tnq_new_quote_text"><?php esc_html_e( 'Quote', 'telex-nonduality-quotes' ); ?></label>
+							</th>
+							<td>
+								<textarea id="tnq_new_quote_text" name="tnq_new_quote_text" rows="3" class="large-text" required></textarea>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="tnq_new_quote_author"><?php esc_html_e( 'Author', 'telex-nonduality-quotes' ); ?></label>
+							</th>
+							<td>
+								<input type="text" id="tnq_new_quote_author" name="tnq_new_quote_author" class="regular-text" required />
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="tnq_new_quote_category"><?php esc_html_e( 'Category', 'telex-nonduality-quotes' ); ?></label>
+							</th>
+							<td>
+								<select id="tnq_new_quote_category" name="tnq_new_quote_category" required>
+									<option value=""><?php esc_html_e( '— Select —', 'telex-nonduality-quotes' ); ?></option>
+									<?php foreach ( $categories as $cat ) : ?>
+										<option value="<?php echo esc_attr( $cat ); ?>"><?php echo esc_html( $cat ); ?></option>
+									<?php endforeach; ?>
+								</select>
+								<p class="description"><?php esc_html_e( 'Choose a tradition category for this quote.', 'telex-nonduality-quotes' ); ?></p>
+							</td>
+						</tr>
+					</table>
+					<?php submit_button( __( 'Add Quote', 'telex-nonduality-quotes' ), 'primary', 'tnq_add_quote_submit' ); ?>
+				</form>
+
+				<hr />
+
+				<h3><?php esc_html_e( 'Import Quotes from CSV', 'telex-nonduality-quotes' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Upload a CSV file with three columns: Author, Quote, Category. The first row is skipped if it looks like a header.', 'telex-nonduality-quotes' ); ?>
+				</p>
+				<form method="post" enctype="multipart/form-data" action="">
+					<?php wp_nonce_field( 'tnq_csv_upload', 'tnq_csv_upload_nonce' ); ?>
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">
+								<label for="tnq_csv_file"><?php esc_html_e( 'CSV File', 'telex-nonduality-quotes' ); ?></label>
+							</th>
+							<td>
+								<input type="file" id="tnq_csv_file" name="tnq_csv_file" accept=".csv" required />
+							</td>
+						</tr>
+					</table>
+					<?php submit_button( __( 'Upload CSV', 'telex-nonduality-quotes' ), 'secondary', 'tnq_csv_upload_submit' ); ?>
+				</form>
+
+				<hr />
+
+				<h3><?php esc_html_e( 'Custom Quotes', 'telex-nonduality-quotes' ); ?></h3>
+				<?php
+				$custom_quotes = get_option( 'tnq_custom_quotes', array() );
+				if ( empty( $custom_quotes ) ) :
+				?>
+					<p><?php esc_html_e( 'No custom quotes added yet. Use the form above to add quotes or import from a CSV file.', 'telex-nonduality-quotes' ); ?></p>
+				<?php else : ?>
+					<table class="widefat striped" style="max-width: 900px;">
+						<thead>
+							<tr>
+								<th style="width:40%"><?php esc_html_e( 'Quote', 'telex-nonduality-quotes' ); ?></th>
+								<th style="width:20%"><?php esc_html_e( 'Author', 'telex-nonduality-quotes' ); ?></th>
+								<th style="width:20%"><?php esc_html_e( 'Category', 'telex-nonduality-quotes' ); ?></th>
+								<th style="width:20%"><?php esc_html_e( 'Actions', 'telex-nonduality-quotes' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $custom_quotes as $i => $q ) : ?>
+								<tr>
+									<td><?php echo esc_html( wp_trim_words( $q['text'], 20, '...' ) ); ?></td>
+									<td><?php echo esc_html( $q['author'] ); ?></td>
+									<td><?php echo esc_html( $q['category'] ); ?></td>
+									<td>
+										<a
+											href="<?php echo esc_url( wp_nonce_url( admin_url( 'options-general.php?page=telex-nonduality-quotes&tab=manage&tnq_delete=' . $i ), 'tnq_delete_quote' ) ); ?>"
+											class="button button-small"
+											onclick="return confirm('<?php echo esc_js( __( 'Delete this quote?', 'telex-nonduality-quotes' ) ); ?>');"
+											style="color:#b32d2e;"
+										>
+											<?php esc_html_e( 'Delete', 'telex-nonduality-quotes' ); ?>
+										</a>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+					<p class="description" style="margin-top:10px;">
+						<?php
+						/* translators: %d: number of custom quotes */
+						printf( esc_html__( 'Total custom quotes: %d', 'telex-nonduality-quotes' ), count( $custom_quotes ) );
+						?>
+					</p>
+				<?php endif; ?>
+
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'telex_nonduality_quotes_register_rest_route' ) ) {
+	function telex_nonduality_quotes_register_rest_route() {
+		register_rest_route( 'tnq/v1', '/daily-quote', array(
+			'methods'             => 'GET',
+			'callback'            => 'telex_nonduality_quotes_daily_quote_callback',
+			'permission_callback' => '__return_true',
+		) );
+	}
+}
+add_action( 'rest_api_init', 'telex_nonduality_quotes_register_rest_route' );
+
+if ( ! function_exists( 'telex_nonduality_quotes_get_all_quotes' ) ) {
+	function telex_nonduality_quotes_get_all_quotes() {
+		$quotes = array(
+			array( 'text' => 'You are not a drop in the ocean. You are the entire ocean in a drop.', 'author' => 'Rumi', 'category' => 'Sufism' ),
+			array( 'text' => 'The eye through which I see God is the same eye through which God sees me.', 'author' => 'Meister Eckhart', 'category' => 'Christian Mysticism' ),
+			array( 'text' => 'The Tao that can be told is not the eternal Tao.', 'author' => 'Lao Tzu', 'category' => 'Taoism' ),
+			array( 'text' => 'The world is illusion. Brahman alone is real. The world is Brahman.', 'author' => 'Adi Shankara', 'category' => 'Advaita Vedanta' ),
+			array( 'text' => 'You are awareness. Awareness is another name for you.', 'author' => 'Ramana Maharshi', 'category' => 'Advaita Vedanta' ),
+			array( 'text' => 'Form is emptiness, emptiness is form.', 'author' => 'Heart Sutra', 'category' => 'Buddhism' ),
+			array( 'text' => 'Silence is the language of God, all else is poor translation.', 'author' => 'Rumi', 'category' => 'Sufism' ),
+			array( 'text' => 'What you seek is seeking you.', 'author' => 'Rumi', 'category' => 'Sufism' ),
+			array( 'text' => 'We are not human beings having a spiritual experience. We are spiritual beings having a human experience.', 'author' => 'Pierre Teilhard de Chardin', 'category' => 'Inspirational' ),
+			array( 'text' => 'Be still, and know that I am God.', 'author' => 'Psalm 46:10', 'category' => 'Christian Mysticism' ),
+			array( 'text' => 'Nature does not hurry, yet everything is accomplished.', 'author' => 'Lao Tzu', 'category' => 'Taoism' ),
+			array( 'text' => 'Your own Self-realization is the greatest service you can render the world.', 'author' => 'Ramana Maharshi', 'category' => 'Advaita Vedanta' ),
+			array( 'text' => 'In the sky, there is no distinction of east and west; people create distinctions out of their own minds and then believe them to be true.', 'author' => 'Buddha', 'category' => 'Buddhism' ),
+			array( 'text' => 'Out beyond ideas of wrongdoing and rightdoing, there is a field. I\'ll meet you there.', 'author' => 'Rumi', 'category' => 'Sufism' ),
+			array( 'text' => 'The privilege of a lifetime is to become who you truly are.', 'author' => 'Carl Jung', 'category' => 'Inspirational' ),
+			array( 'text' => 'To study the Way is to study the self. To study the self is to forget the self. To forget the self is to be enlightened by all things.', 'author' => 'Dogen', 'category' => 'Zen' ),
+			array( 'text' => 'In the beginner\'s mind there are many possibilities, but in the expert\'s mind there are few.', 'author' => 'Shunryu Suzuki', 'category' => 'Zen' ),
+			array( 'text' => 'Sitting quietly, doing nothing, spring comes, and the grass grows by itself.', 'author' => 'Matsuo Basho', 'category' => 'Zen' ),
+			array( 'text' => 'No snowflake ever falls in the wrong place.', 'author' => 'Zen Proverb', 'category' => 'Zen' ),
+			array( 'text' => 'The lamps are different, but the Light is the same.', 'author' => 'Rumi', 'category' => 'Sufism' ),
+			array( 'text' => 'God is not found in the soul by adding anything, but by a process of subtraction.', 'author' => 'Meister Eckhart', 'category' => 'Christian Mysticism' ),
+			array( 'text' => 'You are an aperture through which the universe is looking at and exploring itself.', 'author' => 'Alan Watts', 'category' => 'Inspirational' ),
+			array( 'text' => 'Muddy water is best cleared by leaving it alone.', 'author' => 'Alan Watts', 'category' => 'Taoism' ),
+			array( 'text' => 'The mind turned inwards is the Self; turned outwards, it becomes the ego and all the world.', 'author' => 'Ramana Maharshi', 'category' => 'Advaita Vedanta' ),
+			array( 'text' => 'When I let go of what I am, I become what I might be.', 'author' => 'Lao Tzu', 'category' => 'Taoism' ),
+			array( 'text' => 'The finger pointing at the moon is not the moon.', 'author' => 'Zen Proverb', 'category' => 'Buddhism' ),
+			array( 'text' => 'Before enlightenment, chop wood, carry water. After enlightenment, chop wood, carry water.', 'author' => 'Zen Proverb', 'category' => 'Buddhism' ),
+			array( 'text' => 'All the Buddhas and all sentient beings are nothing but the One Mind, beside which nothing exists.', 'author' => 'Huang Po', 'category' => 'Zen' ),
+			array( 'text' => 'Knowing others is intelligence; knowing yourself is true wisdom.', 'author' => 'Lao Tzu', 'category' => 'Taoism' ),
+			array( 'text' => 'The only way to make sense out of change is to plunge into it, move with it, and join the dance.', 'author' => 'Alan Watts', 'category' => 'Inspirational' ),
+		);
+		$custom_quotes = get_option( 'tnq_custom_quotes', array() );
+		if ( ! empty( $custom_quotes ) ) {
+			$quotes = array_merge( $quotes, $custom_quotes );
+		}
+		return $quotes;
+	}
+}
+
+if ( ! function_exists( 'telex_nonduality_quotes_daily_quote_callback' ) ) {
+	function telex_nonduality_quotes_daily_quote_callback( $request ) {
+		$quotes    = telex_nonduality_quotes_get_all_quotes();
+		$day_seed  = (int) gmdate( 'Ymd' );
+		$index     = $day_seed % count( $quotes );
+		$quote     = $quotes[ $index ];
+
+		return rest_ensure_response( array(
+			'text'   => $quote['text'],
+			'author' => $quote['author'],
+		) );
+	}
+}
+
+if ( ! function_exists( 'telex_nonduality_quotes_get_custom_quotes_json' ) ) {
+	function telex_nonduality_quotes_get_custom_quotes_json() {
+		$custom_quotes = get_option( 'tnq_custom_quotes', array() );
+		if ( empty( $custom_quotes ) ) {
+			return '[]';
+		}
+		return wp_json_encode( array_values( $custom_quotes ) );
+	}
+}
+
+if ( ! function_exists( 'telex_nonduality_quotes_enqueue_custom_quotes' ) ) {
+	function telex_nonduality_quotes_enqueue_custom_quotes() {
+		$custom_quotes = get_option( 'tnq_custom_quotes', array() );
+		if ( ! empty( $custom_quotes ) ) {
+			$handle = 'telex-block-telex-nonduality-quotes-view-script';
+			wp_add_inline_script(
+				$handle,
+				'var tnqCustomQuotes = ' . wp_json_encode( array_values( $custom_quotes ) ) . ';',
+				'before'
+			);
+		}
+	}
+}
+add_action( 'wp_enqueue_scripts', 'telex_nonduality_quotes_enqueue_custom_quotes', 20 );
+]]></content>
+  </file>
+  <file path="src/block.json">
+    <description>Block metadata including attributes for category filtering and display options.</description>
+    <content><![CDATA[{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "telex/block-telex-nonduality-quotes",
+	"version": "0.1.0",
+	"title": "Nonduality Spiritual Quotes Block",
+	"category": "widgets",
+	"icon": "format-quote",
+	"description": "Displays curated nonduality and spiritual quotes from traditions including Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, and Inspirational.",
+	"example": {
+		"attributes": {
+			"category": "all",
+			"fontSize": "medium",
+			"textAlign": "center",
+			"showCategory": true,
+			"colorScheme": "light"
+		}
+	},
+	"attributes": {
+		"category": {
+			"type": "string",
+			"default": "all"
+		},
+		"fontSize": {
+			"type": "string",
+			"default": "medium"
+		},
+		"textAlign": {
+			"type": "string",
+			"default": "center"
+		},
+		"showCategory": {
+			"type": "boolean",
+			"default": true
+		},
+		"showButton": {
+			"type": "boolean",
+			"default": true
+		},
+		"colorScheme": {
+			"type": "string",
+			"default": "light"
+		},
+		"showBackground": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"supports": {
+		"html": false,
+		"spacing": {
+			"padding": true,
+			"margin": true
+		}
+	},
+	"textdomain": "telex-nonduality-quotes-block-wp",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js",
+	"render": "file:./render.php"
+}
+]]></content>
+  </file>
+  <file path="src/index.js">
+    <description>Registers the block type with edit and save functions.</description>
+    <content><![CDATA[
+import { registerBlockType } from '@wordpress/blocks';
+import './style.scss';
+import Edit from './edit';
+import save from './save';
+import metadata from './block.json';
+
+registerBlockType( metadata.name, {
+	edit: Edit,
+	save,
+} );
+]]></content>
+  </file>
+  <file path="src/edit.js">
+    <description>Edit component with inspector controls for category, font size, alignment, color scheme, and a live quote preview.</description>
+    <content><![CDATA[
+import { __ } from '@wordpress/i18n';
+import { useBlockProps, InspectorControls, BlockControls, AlignmentToolbar } from '@wordpress/block-editor';
+import { PanelBody, SelectControl, ToggleControl } from '@wordpress/components';
+import { useState, useEffect, useCallback } from '@wordpress/element';
+import './editor.scss';
+
+const QUOTES = [
+	{ text: "You are not a drop in the ocean. You are the entire ocean in a drop.", author: "Rumi", category: "Sufism" },
+	{ text: "The eye through which I see God is the same eye through which God sees me.", author: "Meister Eckhart", category: "Christian Mysticism" },
+	{ text: "In the beginning was the Word, and the Word was with God, and the Word was God.", author: "Gospel of John", category: "Christian Mysticism" },
+	{ text: "Be still, and know that I am God.", author: "Psalm 46:10", category: "Christian Mysticism" },
+	{ text: "The Tao that can be told is not the eternal Tao.", author: "Lao Tzu", category: "Taoism" },
+	{ text: "When I let go of what I am, I become what I might be.", author: "Lao Tzu", category: "Taoism" },
+	{ text: "Nature does not hurry, yet everything is accomplished.", author: "Lao Tzu", category: "Taoism" },
+	{ text: "The world is illusion. Brahman alone is real. The world is Brahman.", author: "Adi Shankara", category: "Advaita Vedanta" },
+	{ text: "That which permeates all, which nothing transcends and which, like the universal space around us, fills everything completely from within and without, that Supreme non-dual Brahman — that thou art.", author: "Shankaracharya", category: "Advaita Vedanta" },
+	{ text: "Brahman is the only truth, the world is unreal, and there is ultimately no difference between Brahman and individual self.", author: "Adi Shankara", category: "Advaita Vedanta" },
+	{ text: "You are awareness. Awareness is another name for you.", author: "Ramana Maharshi", category: "Advaita Vedanta" },
+	{ text: "Your own Self-realization is the greatest service you can render the world.", author: "Ramana Maharshi", category: "Advaita Vedanta" },
+	{ text: "The mind turned inwards is the Self; turned outwards, it becomes the ego and all the world.", author: "Ramana Maharshi", category: "Advaita Vedanta" },
+	{ text: "In the sky, there is no distinction of east and west; people create distinctions out of their own minds and then believe them to be true.", author: "Buddha", category: "Buddhism" },
+	{ text: "Form is emptiness, emptiness is form.", author: "Heart Sutra", category: "Buddhism" },
+	{ text: "You are the sky. Everything else — it's just the weather.", author: "Pema Chödrön", category: "Buddhism" },
+	{ text: "The finger pointing at the moon is not the moon.", author: "Zen Proverb", category: "Buddhism" },
+	{ text: "Before enlightenment, chop wood, carry water. After enlightenment, chop wood, carry water.", author: "Zen Proverb", category: "Buddhism" },
+	{ text: "Silence is the language of God, all else is poor translation.", author: "Rumi", category: "Sufism" },
+	{ text: "What you seek is seeking you.", author: "Rumi", category: "Sufism" },
+	{ text: "I have lived on the lip of insanity, wanting to know reasons, knocking on a door. It opens. I've been knocking from the inside.", author: "Rumi", category: "Sufism" },
+	{ text: "The lamps are different, but the Light is the same.", author: "Rumi", category: "Sufism" },
+	{ text: "Out beyond ideas of wrongdoing and rightdoing, there is a field. I'll meet you there.", author: "Rumi", category: "Sufism" },
+	{ text: "We are not human beings having a spiritual experience. We are spiritual beings having a human experience.", author: "Pierre Teilhard de Chardin", category: "Inspirational" },
+	{ text: "The privilege of a lifetime is to become who you truly are.", author: "Carl Jung", category: "Inspirational" },
+	{ text: "Knowing others is intelligence; knowing yourself is true wisdom.", author: "Lao Tzu", category: "Taoism" },
+	{ text: "The only way to make sense out of change is to plunge into it, move with it, and join the dance.", author: "Alan Watts", category: "Inspirational" },
+	{ text: "You are an aperture through which the universe is looking at and exploring itself.", author: "Alan Watts", category: "Inspirational" },
+	{ text: "Muddy water is best cleared by leaving it alone.", author: "Alan Watts", category: "Taoism" },
+	{ text: "The soul that is attached to anything, however much good there may be in it, will not arrive at the liberty of the divine.", author: "St. John of the Cross", category: "Christian Mysticism" },
+	{ text: "God is not found in the soul by adding anything, but by a process of subtraction.", author: "Meister Eckhart", category: "Christian Mysticism" },
+	{ text: "There is no creation, no destruction, no bondage, no longing to be freed, no striving for liberation, and no one who has attained. Know that this is the ultimate truth.", author: "Ramana Maharshi", category: "Advaita Vedanta" },
+	{ text: "When you make the two one, and when you make the inside like the outside and the outside like the inside, then you will enter the Kingdom.", author: "Gospel of Thomas", category: "Christian Mysticism" },
+	{ text: "Do not be satisfied with the stories that come before you. Unfold your own myth.", author: "Rumi", category: "Sufism" },
+	{ text: "The you that goes in one side of the meditation experience is not the same you that comes out the other side.", author: "Bhante Henepola Gunaratana", category: "Buddhism" },
+	{ text: "To understand everything is to forgive everything.", author: "Buddha", category: "Buddhism" },
+	{ text: "To study the Way is to study the self. To study the self is to forget the self. To forget the self is to be enlightened by all things.", author: "Dogen", category: "Zen" },
+	{ text: "If you understand, things are just as they are; if you do not understand, things are just as they are.", author: "Zen Proverb", category: "Zen" },
+	{ text: "In the beginner's mind there are many possibilities, but in the expert's mind there are few.", author: "Shunryu Suzuki", category: "Zen" },
+	{ text: "The instant you speak about a thing, you miss the mark.", author: "Zen Proverb", category: "Zen" },
+	{ text: "All the Buddhas and all sentient beings are nothing but the One Mind, beside which nothing exists.", author: "Huang Po", category: "Zen" },
+	{ text: "Sitting quietly, doing nothing, spring comes, and the grass grows by itself.", author: "Matsuo Basho", category: "Zen" },
+	{ text: "When you try to stay on the surface of the water, you sink; but when you try to sink, you float.", author: "Alan Watts", category: "Zen" },
+	{ text: "No snowflake ever falls in the wrong place.", author: "Zen Proverb", category: "Zen" },
+];
+
+const CATEGORIES = [
+	{ label: __( 'All Categories', 'telex-nonduality-quotes' ), value: 'all' },
+	{ label: __( 'Advaita Vedanta', 'telex-nonduality-quotes' ), value: 'Advaita Vedanta' },
+	{ label: __( 'Buddhism', 'telex-nonduality-quotes' ), value: 'Buddhism' },
+	{ label: __( 'Taoism', 'telex-nonduality-quotes' ), value: 'Taoism' },
+	{ label: __( 'Christian Mysticism', 'telex-nonduality-quotes' ), value: 'Christian Mysticism' },
+	{ label: __( 'Sufism', 'telex-nonduality-quotes' ), value: 'Sufism' },
+	{ label: __( 'Zen', 'telex-nonduality-quotes' ), value: 'Zen' },
+	{ label: __( 'Inspirational', 'telex-nonduality-quotes' ), value: 'Inspirational' },
+];
+
+const FONT_SIZES = [
+	{ label: __( 'Small', 'telex-nonduality-quotes' ), value: 'small' },
+	{ label: __( 'Medium', 'telex-nonduality-quotes' ), value: 'medium' },
+	{ label: __( 'Large', 'telex-nonduality-quotes' ), value: 'large' },
+];
+
+const COLOR_SCHEMES = [
+	{ label: __( 'Light', 'telex-nonduality-quotes' ), value: 'light' },
+	{ label: __( 'Dark', 'telex-nonduality-quotes' ), value: 'dark' },
+	{ label: __( 'Warm', 'telex-nonduality-quotes' ), value: 'warm' },
+	{ label: __( 'Serene', 'telex-nonduality-quotes' ), value: 'serene' },
+];
+
+function getFilteredQuotes( category ) {
+	if ( category === 'all' ) {
+		return QUOTES;
+	}
+	return QUOTES.filter( ( q ) => q.category === category );
+}
+
+function getRandomQuote( quotes, currentIndex ) {
+	if ( quotes.length <= 1 ) {
+		return 0;
+	}
+	let newIndex;
+	do {
+		newIndex = Math.floor( Math.random() * quotes.length );
+	} while ( newIndex === currentIndex );
+	return newIndex;
+}
+
+export default function Edit( { attributes, setAttributes } ) {
+	const { category, fontSize, textAlign, showCategory, showButton, colorScheme, showBackground } = attributes;
+	const [ currentIndex, setCurrentIndex ] = useState( 0 );
+	const [ fading, setFading ] = useState( false );
+
+	const filteredQuotes = getFilteredQuotes( category );
+	const quote = filteredQuotes[ currentIndex % filteredQuotes.length ] || filteredQuotes[ 0 ];
+
+	useEffect( () => {
+		setCurrentIndex( 0 );
+	}, [ category ] );
+
+	const handleNewQuote = useCallback( () => {
+		setFading( true );
+		setTimeout( () => {
+			setCurrentIndex( ( prev ) => getRandomQuote( filteredQuotes, prev ) );
+			setFading( false );
+		}, 300 );
+	}, [ filteredQuotes ] );
+
+	const blockProps = useBlockProps( {
+		className: `tnq-scheme-${ colorScheme } tnq-size-${ fontSize } tnq-align-${ textAlign }`,
+	} );
+
+	return (
+		<>
+			<BlockControls>
+				<AlignmentToolbar
+					value={ textAlign }
+					onChange={ ( newAlign ) => setAttributes( { textAlign: newAlign || 'center' } ) }
+				/>
+			</BlockControls>
+			<InspectorControls>
+				<PanelBody title={ __( 'Quote Settings', 'telex-nonduality-quotes' ) }>
+					<SelectControl
+						label={ __( 'Category', 'telex-nonduality-quotes' ) }
+						value={ category }
+						options={ CATEGORIES }
+						onChange={ ( value ) => setAttributes( { category: value } ) }
+					/>
+					<ToggleControl
+						label={ __( 'Show Category Label', 'telex-nonduality-quotes' ) }
+						checked={ showCategory }
+						onChange={ ( value ) => setAttributes( { showCategory: value } ) }
+					/>
+					<ToggleControl
+						label={ __( 'Show New Quote Button', 'telex-nonduality-quotes' ) }
+						checked={ showButton }
+						onChange={ ( value ) => setAttributes( { showButton: value } ) }
+					/>
+					<ToggleControl
+						label={ __( 'Show Nature Background', 'telex-nonduality-quotes' ) }
+						help={ __( 'Requires a Pixabay API key in Settings > Nonduality Quotes.', 'telex-nonduality-quotes' ) }
+						checked={ showBackground }
+						onChange={ ( value ) => setAttributes( { showBackground: value } ) }
+					/>
+				</PanelBody>
+				<PanelBody title={ __( 'Appearance', 'telex-nonduality-quotes' ) } initialOpen={ false }>
+					<SelectControl
+						label={ __( 'Font Size', 'telex-nonduality-quotes' ) }
+						value={ fontSize }
+						options={ FONT_SIZES }
+						onChange={ ( value ) => setAttributes( { fontSize: value } ) }
+					/>
+					<SelectControl
+						label={ __( 'Color Scheme', 'telex-nonduality-quotes' ) }
+						value={ colorScheme }
+						options={ COLOR_SCHEMES }
+						onChange={ ( value ) => setAttributes( { colorScheme: value } ) }
+					/>
+				</PanelBody>
+			</InspectorControls>
+			<div { ...blockProps }>
+				<div className={ `tnq-quote-card${ fading ? ' tnq-fading' : '' }` }>
+					<div className="tnq-quote-icon" aria-hidden="true">&ldquo;</div>
+					<blockquote className="tnq-quote-text">
+						{ quote ? quote.text : __( 'No quotes found for this category.', 'telex-nonduality-quotes' ) }
+					</blockquote>
+					{ quote && (
+						<div className="tnq-quote-meta">
+							<span className="tnq-quote-author">&mdash; { quote.author }</span>
+							{ showCategory && (
+								<span className="tnq-quote-category">{ quote.category }</span>
+							) }
+						</div>
+					) }
+					<div className="tnq-quote-actions">
+						{ showButton && (
+							<button
+								type="button"
+								className="tnq-new-quote-btn"
+								onClick={ handleNewQuote }
+							>
+								{ __( 'New Quote', 'telex-nonduality-quotes' ) }
+							</button>
+						) }
+						<button
+							type="button"
+							className="tnq-new-quote-btn tnq-share-btn"
+							onClick={ () => {} }
+							title={ __( 'Share', 'telex-nonduality-quotes' ) }
+						>
+							{ __( 'Share', 'telex-nonduality-quotes' ) }
+						</button>
+					</div>
+				</div>
+			</div>
+		</>
+	);
+}
+]]></content>
+  </file>
+  <file path="src/save.js">
+    <description>Save function that stores the block attributes as data attributes for the front-end view script to use.</description>
+    <content><![CDATA[export default function save() {
+	return null;
+}
+]]></content>
+  </file>
+  <file path="src/style.scss">
+    <description>Shared styles for front end and editor.</description>
+    <content><![CDATA[
+.wp-block-telex-block-telex-nonduality-quotes {
+	--tnq-bg: #ffffff;
+	--tnq-text: #2c2c2c;
+	--tnq-accent: #7b6b8a;
+	--tnq-meta: #6b6b6b;
+	--tnq-border: #e0d6eb;
+	--tnq-btn-bg: #7b6b8a;
+	--tnq-btn-text: #ffffff;
+	--tnq-icon-color: #d4c6e2;
+
+	font-family: Georgia, 'Times New Roman', serif;
+	max-width: 720px;
+	margin-left: auto;
+	margin-right: auto;
+
+	&.tnq-scheme-dark {
+		--tnq-bg: #1a1a2e;
+		--tnq-text: #e0e0e0;
+		--tnq-accent: #b8a9d1;
+		--tnq-meta: #a0a0b0;
+		--tnq-border: #3a3a5e;
+		--tnq-btn-bg: #b8a9d1;
+		--tnq-btn-text: #1a1a2e;
+		--tnq-icon-color: #3a3a6e;
+	}
+
+	&.tnq-scheme-warm {
+		--tnq-bg: #fdf6ec;
+		--tnq-text: #4a3728;
+		--tnq-accent: #c4956a;
+		--tnq-meta: #8a7560;
+		--tnq-border: #e8d5be;
+		--tnq-btn-bg: #c4956a;
+		--tnq-btn-text: #ffffff;
+		--tnq-icon-color: #e8d5be;
+	}
+
+	&.tnq-scheme-serene {
+		--tnq-bg: #f0f7f4;
+		--tnq-text: #2d4a3e;
+		--tnq-accent: #5a9e82;
+		--tnq-meta: #6a8a7a;
+		--tnq-border: #c8e0d4;
+		--tnq-btn-bg: #5a9e82;
+		--tnq-btn-text: #ffffff;
+		--tnq-icon-color: #c8e0d4;
+	}
+
+	&.tnq-align-left {
+		text-align: left;
+	}
+
+	&.tnq-align-center {
+		text-align: center;
+	}
+
+	&.tnq-align-right {
+		text-align: right;
+	}
+
+	&.tnq-size-small {
+		.tnq-quote-text {
+			font-size: 1rem;
+			line-height: 1.6;
+		}
+	}
+
+	&.tnq-size-medium {
+		.tnq-quote-text {
+			font-size: 1.25rem;
+			line-height: 1.7;
+		}
+	}
+
+	&.tnq-size-large {
+		.tnq-quote-text {
+			font-size: 1.5rem;
+			line-height: 1.8;
+		}
+	}
+
+	.tnq-quote-card {
+		background: var(--tnq-bg);
+		border: 1px solid var(--tnq-border);
+		border-radius: 12px;
+		padding: 0;
+		position: relative;
+		overflow: hidden;
+		transition: opacity 0.3s ease;
+
+		&.tnq-fading {
+			opacity: 0;
+		}
+
+		&.tnq-has-bg {
+			border-color: transparent;
+
+			.tnq-quote-content {
+				color: #ffffff;
+			}
+
+			.tnq-quote-text {
+				color: #ffffff;
+				text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+			}
+
+			.tnq-quote-author {
+				color: rgba(255, 255, 255, 0.9);
+			}
+
+			.tnq-quote-category {
+				color: rgba(255, 255, 255, 0.8);
+				border-color: rgba(255, 255, 255, 0.3);
+			}
+
+			.tnq-quote-icon {
+				color: rgba(255, 255, 255, 0.25);
+			}
+
+			.tnq-new-quote-btn {
+				background: rgba(255, 255, 255, 0.2);
+				color: #ffffff;
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
+			}
+
+			.tnq-share-btn {
+				color: #ffffff;
+				border-color: rgba(255, 255, 255, 0.3);
+
+				&:hover {
+					background: rgba(255, 255, 255, 0.15);
+				}
+			}
+		}
+	}
+
+	.tnq-bg-image {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-size: cover;
+		background-position: center;
+		z-index: 0;
+		transition: opacity 0.6s ease;
+	}
+
+	.tnq-bg-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(
+			135deg,
+			rgba(0, 0, 0, 0.55) 0%,
+			rgba(0, 0, 0, 0.35) 100%
+		);
+		z-index: 1;
+		display: none;
+	}
+
+	.tnq-quote-card.tnq-has-bg .tnq-bg-overlay {
+		display: block;
+	}
+
+	.tnq-quote-content {
+		position: relative;
+		z-index: 2;
+		padding: 2.5rem 2rem 2rem;
+	}
+
+	.tnq-quote-icon {
+		font-size: 4rem;
+		line-height: 1;
+		color: var(--tnq-icon-color);
+		margin-bottom: 0.5rem;
+		font-family: Georgia, serif;
+		user-select: none;
+	}
+
+	.tnq-quote-text {
+		color: var(--tnq-text);
+		font-style: italic;
+		margin: 0 0 1.25rem;
+		padding: 0;
+		border: none;
+	}
+
+	.tnq-quote-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		margin-bottom: 1.25rem;
+	}
+
+	.tnq-quote-author {
+		color: var(--tnq-accent);
+		font-size: 0.95rem;
+		font-weight: 600;
+		font-style: normal;
+	}
+
+	.tnq-quote-category {
+		display: inline-block;
+		color: var(--tnq-meta);
+		font-size: 0.8rem;
+		font-style: normal;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		padding: 0.2em 0.7em;
+		border: 1px solid var(--tnq-border);
+		border-radius: 999px;
+		align-self: center;
+
+		.tnq-align-left & {
+			align-self: flex-start;
+		}
+
+		.tnq-align-right & {
+			align-self: flex-end;
+		}
+	}
+
+	.tnq-quote-actions {
+		display: flex;
+		gap: 1rem;
+		justify-content: center;
+		flex-wrap: wrap;
+
+		.tnq-align-left & {
+			justify-content: flex-start;
+		}
+
+		.tnq-align-right & {
+			justify-content: flex-end;
+		}
+	}
+
+	.tnq-new-quote-btn {
+		display: inline-block;
+		background: var(--tnq-btn-bg);
+		color: var(--tnq-btn-text);
+		border: none;
+		border-radius: 6px;
+		padding: 0.6em 1.5em;
+		font-size: 0.9rem;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		cursor: pointer;
+		transition: opacity 0.2s ease, transform 0.2s ease;
+		line-height: 1.4;
+
+		&:hover {
+			opacity: 0.88;
+			transform: translateY(-1px);
+		}
+
+		&:active {
+			transform: translateY(0);
+		}
+	}
+
+	.tnq-share-wrapper {
+		position: relative;
+		display: inline-block;
+	}
+
+	.tnq-share-dropdown {
+		position: absolute;
+		bottom: calc(100% + 8px);
+		left: 50%;
+		transform: translateX(-50%);
+		background: var(--tnq-bg);
+		border: 1px solid var(--tnq-border);
+		border-radius: 10px;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+		padding: 0.5rem 0;
+		min-width: 180px;
+		z-index: 100;
+		animation: tnqDropdownIn 0.2s ease;
+
+		&::after {
+			content: '';
+			position: absolute;
+			top: 100%;
+			left: 50%;
+			transform: translateX(-50%);
+			border: 8px solid transparent;
+			border-top-color: var(--tnq-bg);
+		}
+
+		&::before {
+			content: '';
+			position: absolute;
+			top: 100%;
+			left: 50%;
+			transform: translateX(-50%);
+			border: 9px solid transparent;
+			border-top-color: var(--tnq-border);
+		}
+	}
+
+	@keyframes tnqDropdownIn {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) translateY(4px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
+	}
+
+	.tnq-share-option {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		width: 100%;
+		padding: 0.55rem 1rem;
+		border: none;
+		background: transparent;
+		color: var(--tnq-text);
+		font-size: 0.85rem;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		cursor: pointer;
+		text-align: left;
+		transition: background 0.15s ease;
+		line-height: 1.3;
+
+		&:hover {
+			background: var(--tnq-border);
+		}
+	}
+
+	.tnq-share-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		font-family: 'Font Awesome 5 Brands', 'FontAwesome', sans-serif;
+		font-size: 1rem;
+		font-style: normal;
+		flex-shrink: 0;
+	}
+
+	.tnq-share-icon.tnq-icon-text {
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		font-weight: 700;
+		font-size: 1rem;
+	}
+
+	.tnq-toast {
+		position: absolute;
+		bottom: 1rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: var(--tnq-btn-bg);
+		color: var(--tnq-btn-text);
+		padding: 0.5em 1.25em;
+		border-radius: 6px;
+		font-size: 0.85rem;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		z-index: 200;
+		animation: tnqToastIn 0.3s ease;
+		pointer-events: none;
+	}
+
+	@keyframes tnqToastIn {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
+	}
+
+	.tnq-quote-meta:empty,
+	.tnq-quote-category:empty {
+		display: none;
+	}
+}
+]]></content>
+  </file>
+  <file path="src/editor.scss">
+    <description>Editor-specific styles.</description>
+    <content><![CDATA[
+.wp-block-telex-block-telex-nonduality-quotes {
+	.tnq-new-quote-btn {
+		pointer-events: all;
+	}
+}
+]]></content>
+  </file>
+  <file path="src/view.js">
+    <description>Front-end JavaScript that initializes each block instance, loads quotes, and handles the New Quote button interaction with a fade transition.</description>
+    <content><![CDATA[
+var QUOTES = [
+	{ text: "You are not a drop in the ocean. You are the entire ocean in a drop.", author: "Rumi", category: "Sufism" },
+	{ text: "The eye through which I see God is the same eye through which God sees me.", author: "Meister Eckhart", category: "Christian Mysticism" },
+	{ text: "In the beginning was the Word, and the Word was with God, and the Word was God.", author: "Gospel of John", category: "Christian Mysticism" },
+	{ text: "Be still, and know that I am God.", author: "Psalm 46:10", category: "Christian Mysticism" },
+	{ text: "The Tao that can be told is not the eternal Tao.", author: "Lao Tzu", category: "Taoism" },
+	{ text: "When I let go of what I am, I become what I might be.", author: "Lao Tzu", category: "Taoism" },
+	{ text: "Nature does not hurry, yet everything is accomplished.", author: "Lao Tzu", category: "Taoism" },
+	{ text: "The world is illusion. Brahman alone is real. The world is Brahman.", author: "Adi Shankara", category: "Advaita Vedanta" },
+	{ text: "That which permeates all, which nothing transcends and which, like the universal space around us, fills everything completely from within and without, that Supreme non-dual Brahman \u2014 that thou art.", author: "Shankaracharya", category: "Advaita Vedanta" },
+	{ text: "Brahman is the only truth, the world is unreal, and there is ultimately no difference between Brahman and individual self.", author: "Adi Shankara", category: "Advaita Vedanta" },
+	{ text: "You are awareness. Awareness is another name for you.", author: "Ramana Maharshi", category: "Advaita Vedanta" },
+	{ text: "Your own Self-realization is the greatest service you can render the world.", author: "Ramana Maharshi", category: "Advaita Vedanta" },
+	{ text: "The mind turned inwards is the Self; turned outwards, it becomes the ego and all the world.", author: "Ramana Maharshi", category: "Advaita Vedanta" },
+	{ text: "In the sky, there is no distinction of east and west; people create distinctions out of their own minds and then believe them to be true.", author: "Buddha", category: "Buddhism" },
+	{ text: "Form is emptiness, emptiness is form.", author: "Heart Sutra", category: "Buddhism" },
+	{ text: "You are the sky. Everything else \u2014 it\u2019s just the weather.", author: "Pema Ch\u00f6dr\u00f6n", category: "Buddhism" },
+	{ text: "The finger pointing at the moon is not the moon.", author: "Zen Proverb", category: "Buddhism" },
+	{ text: "Before enlightenment, chop wood, carry water. After enlightenment, chop wood, carry water.", author: "Zen Proverb", category: "Buddhism" },
+	{ text: "Silence is the language of God, all else is poor translation.", author: "Rumi", category: "Sufism" },
+	{ text: "What you seek is seeking you.", author: "Rumi", category: "Sufism" },
+	{ text: "I have lived on the lip of insanity, wanting to know reasons, knocking on a door. It opens. I\u2019ve been knocking from the inside.", author: "Rumi", category: "Sufism" },
+	{ text: "The lamps are different, but the Light is the same.", author: "Rumi", category: "Sufism" },
+	{ text: "Out beyond ideas of wrongdoing and rightdoing, there is a field. I\u2019ll meet you there.", author: "Rumi", category: "Sufism" },
+	{ text: "We are not human beings having a spiritual experience. We are spiritual beings having a human experience.", author: "Pierre Teilhard de Chardin", category: "Inspirational" },
+	{ text: "The privilege of a lifetime is to become who you truly are.", author: "Carl Jung", category: "Inspirational" },
+	{ text: "Knowing others is intelligence; knowing yourself is true wisdom.", author: "Lao Tzu", category: "Taoism" },
+	{ text: "The only way to make sense out of change is to plunge into it, move with it, and join the dance.", author: "Alan Watts", category: "Inspirational" },
+	{ text: "You are an aperture through which the universe is looking at and exploring itself.", author: "Alan Watts", category: "Inspirational" },
+	{ text: "Muddy water is best cleared by leaving it alone.", author: "Alan Watts", category: "Taoism" },
+	{ text: "The soul that is attached to anything, however much good there may be in it, will not arrive at the liberty of the divine.", author: "St. John of the Cross", category: "Christian Mysticism" },
+	{ text: "God is not found in the soul by adding anything, but by a process of subtraction.", author: "Meister Eckhart", category: "Christian Mysticism" },
+	{ text: "There is no creation, no destruction, no bondage, no longing to be freed, no striving for liberation, and no one who has attained. Know that this is the ultimate truth.", author: "Ramana Maharshi", category: "Advaita Vedanta" },
+	{ text: "When you make the two one, and when you make the inside like the outside and the outside like the inside, then you will enter the Kingdom.", author: "Gospel of Thomas", category: "Christian Mysticism" },
+	{ text: "Do not be satisfied with the stories that come before you. Unfold your own myth.", author: "Rumi", category: "Sufism" },
+	{ text: "The you that goes in one side of the meditation experience is not the same you that comes out the other side.", author: "Bhante Henepola Gunaratana", category: "Buddhism" },
+	{ text: "To understand everything is to forgive everything.", author: "Buddha", category: "Buddhism" },
+	{ text: "To study the Way is to study the self. To study the self is to forget the self. To forget the self is to be enlightened by all things.", author: "Dogen", category: "Zen" },
+	{ text: "If you understand, things are just as they are; if you do not understand, things are just as they are.", author: "Zen Proverb", category: "Zen" },
+	{ text: "In the beginner\u2019s mind there are many possibilities, but in the expert\u2019s mind there are few.", author: "Shunryu Suzuki", category: "Zen" },
+	{ text: "The instant you speak about a thing, you miss the mark.", author: "Zen Proverb", category: "Zen" },
+	{ text: "All the Buddhas and all sentient beings are nothing but the One Mind, beside which nothing exists.", author: "Huang Po", category: "Zen" },
+	{ text: "Sitting quietly, doing nothing, spring comes, and the grass grows by itself.", author: "Matsuo Basho", category: "Zen" },
+	{ text: "When you try to stay on the surface of the water, you sink; but when you try to sink, you float.", author: "Alan Watts", category: "Zen" },
+	{ text: "No snowflake ever falls in the wrong place.", author: "Zen Proverb", category: "Zen" }
+];
+
+var tnqNatureTerms = [
+	'mountain+landscape', 'forest+sunlight', 'ocean+waves', 'sunrise+nature',
+	'river+forest', 'waterfall+nature', 'meadow+flowers', 'starry+sky',
+	'misty+mountains', 'lake+reflection', 'autumn+leaves', 'zen+garden',
+	'bamboo+forest', 'cherry+blossom', 'desert+sunset', 'northern+lights'
+];
+
+var tnqImageCache = {};
+
+function tnqGetFilteredQuotes( category ) {
+	if ( category === 'all' ) {
+		return QUOTES;
+	}
+	return QUOTES.filter( function( q ) {
+		return q.category === category;
+	} );
+}
+
+function tnqGetRandomIndex( max, current ) {
+	if ( max <= 1 ) {
+		return 0;
+	}
+	var newIndex;
+	do {
+		newIndex = Math.floor( Math.random() * max );
+	} while ( newIndex === current );
+	return newIndex;
+}
+
+function tnqRenderQuote( block, quote, showCategory ) {
+	var textEl = block.querySelector( '.tnq-quote-text' );
+	var authorEl = block.querySelector( '.tnq-quote-author' );
+	var categoryEl = block.querySelector( '.tnq-quote-category' );
+
+	if ( textEl ) {
+		textEl.textContent = quote.text;
+	}
+	if ( authorEl ) {
+		authorEl.textContent = '\u2014 ' + quote.author;
+	}
+	if ( categoryEl ) {
+		if ( showCategory ) {
+			categoryEl.textContent = quote.category;
+			categoryEl.style.display = '';
+		} else {
+			categoryEl.textContent = '';
+			categoryEl.style.display = 'none';
+		}
+	}
+}
+
+function tnqFetchNatureImage( apiKey, callback ) {
+	if ( ! apiKey ) {
+		callback( null );
+		return;
+	}
+
+	var term = tnqNatureTerms[ Math.floor( Math.random() * tnqNatureTerms.length ) ];
+
+	if ( tnqImageCache[ term ] && tnqImageCache[ term ].length > 0 ) {
+		var cached = tnqImageCache[ term ];
+		callback( cached[ Math.floor( Math.random() * cached.length ) ] );
+		return;
+	}
+
+	var page = Math.floor( Math.random() * 3 ) + 1;
+	var url = 'https://pixabay.com/api/?key=' + encodeURIComponent( apiKey ) +
+		'&q=' + encodeURIComponent( term ) +
+		'&image_type=photo&orientation=horizontal&category=nature' +
+		'&min_width=800&per_page=10&page=' + page +
+		'&safesearch=true';
+
+	var xhr = new XMLHttpRequest();
+	xhr.open( 'GET', url, true );
+	xhr.onreadystatechange = function() {
+		if ( xhr.readyState === 4 ) {
+			if ( xhr.status === 200 ) {
+				try {
+					var data = JSON.parse( xhr.responseText );
+					if ( data.hits && data.hits.length > 0 ) {
+						var urls = data.hits.map( function( hit ) {
+							return hit.webformatURL;
+						} );
+						tnqImageCache[ term ] = urls;
+						callback( urls[ Math.floor( Math.random() * urls.length ) ] );
+					} else {
+						callback( null );
+					}
+				} catch ( e ) {
+					callback( null );
+				}
+			} else {
+				callback( null );
+			}
+		}
+	};
+	xhr.send();
+}
+
+function tnqApplyBackground( card, imageUrl ) {
+	var bgEl = card.querySelector( '.tnq-bg-image' );
+	if ( ! bgEl ) {
+		return;
+	}
+	if ( imageUrl ) {
+		bgEl.style.backgroundImage = 'url(' + imageUrl + ')';
+		card.classList.add( 'tnq-has-bg' );
+	} else {
+		bgEl.style.backgroundImage = '';
+		card.classList.remove( 'tnq-has-bg' );
+	}
+}
+
+function tnqShowToast( block, message ) {
+	var toast = block.querySelector( '.tnq-toast' );
+	if ( ! toast ) {
+		return;
+	}
+	toast.textContent = message;
+	toast.style.display = 'block';
+	setTimeout( function() {
+		toast.style.display = 'none';
+	}, 2000 );
+}
+
+function tnqGetShareText( quote ) {
+	return '"' + quote.text + '" \u2014 ' + quote.author;
+}
+
+function tnqShareTo( platform, quote, block ) {
+	var text = tnqGetShareText( quote );
+	var pageUrl = window.location.href;
+	var encodedText = encodeURIComponent( text );
+	var encodedUrl = encodeURIComponent( pageUrl );
+	var shareUrl = '';
+
+	switch ( platform ) {
+		case 'facebook':
+			shareUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl + '&quote=' + encodedText;
+			window.open( shareUrl, '_blank', 'width=600,height=400' );
+			break;
+
+		case 'x':
+			shareUrl = 'https://x.com/intent/tweet?text=' + encodedText + '&url=' + encodedUrl;
+			window.open( shareUrl, '_blank', 'width=600,height=400' );
+			break;
+
+		case 'whatsapp':
+			shareUrl = 'https://api.whatsapp.com/send?text=' + encodedText + '%0A%0A' + encodedUrl;
+			window.open( shareUrl, '_blank' );
+			break;
+
+		case 'linkedin':
+			shareUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodedUrl;
+			window.open( shareUrl, '_blank', 'width=600,height=400' );
+			break;
+
+		case 'instagram':
+			if ( navigator.clipboard ) {
+				navigator.clipboard.writeText( text ).then( function() {
+					tnqShowToast( block, 'Quote copied! Paste it in your Instagram post.' );
+				} );
+			} else {
+				tnqCopyFallback( text );
+				tnqShowToast( block, 'Quote copied! Paste it in your Instagram post.' );
+			}
+			break;
+
+		case 'link':
+			var linkText = text + '\n\n' + pageUrl;
+			if ( navigator.clipboard ) {
+				navigator.clipboard.writeText( linkText ).then( function() {
+					tnqShowToast( block, 'Copied to clipboard!' );
+				} );
+			} else {
+				tnqCopyFallback( linkText );
+				tnqShowToast( block, 'Copied to clipboard!' );
+			}
+			break;
+	}
+}
+
+function tnqCopyFallback( text ) {
+	var textarea = document.createElement( 'textarea' );
+	textarea.value = text;
+	textarea.style.position = 'fixed';
+	textarea.style.left = '-9999px';
+	document.body.appendChild( textarea );
+	textarea.select();
+	document.execCommand( 'copy' );
+	document.body.removeChild( textarea );
+}
+
+// Merge custom quotes from the admin Manage Quotes page.
+if ( typeof tnqCustomQuotes !== 'undefined' && Array.isArray( tnqCustomQuotes ) ) {
+	for ( var ci = 0; ci < tnqCustomQuotes.length; ci++ ) {
+		QUOTES.push( tnqCustomQuotes[ ci ] );
+	}
+}
+
+document.addEventListener( 'DOMContentLoaded', function() {
+	var blocks = document.querySelectorAll( '.wp-block-telex-block-telex-nonduality-quotes' );
+
+	blocks.forEach( function( block ) {
+		var category = block.getAttribute( 'data-category' ) || 'all';
+		var showCategory = block.getAttribute( 'data-show-category' ) !== 'false';
+		var showButton = block.getAttribute( 'data-show-button' ) !== 'false';
+		var showBackground = block.getAttribute( 'data-show-background' ) !== 'false';
+		var pixabayKey = block.getAttribute( 'data-pixabay-key' ) || '';
+		var filteredQuotes = tnqGetFilteredQuotes( category );
+		var currentIndex = Math.floor( Math.random() * filteredQuotes.length );
+		var card = block.querySelector( '.tnq-quote-card' );
+		var btn = block.querySelector( '.tnq-new-quote-btn:not(.tnq-share-btn)' );
+		var shareBtn = block.querySelector( '.tnq-share-btn' );
+		var shareDropdown = block.querySelector( '.tnq-share-dropdown' );
+		var shareOptions = block.querySelectorAll( '.tnq-share-option' );
+
+		if ( filteredQuotes.length > 0 ) {
+			tnqRenderQuote( block, filteredQuotes[ currentIndex ], showCategory );
+		}
+
+		if ( showBackground && pixabayKey && card ) {
+			tnqFetchNatureImage( pixabayKey, function( url ) {
+				tnqApplyBackground( card, url );
+			} );
+		}
+
+		if ( btn ) {
+			if ( ! showButton ) {
+				btn.style.display = 'none';
+			} else {
+				btn.addEventListener( 'click', function() {
+					if ( card ) {
+						card.classList.add( 'tnq-fading' );
+					}
+					setTimeout( function() {
+						currentIndex = tnqGetRandomIndex( filteredQuotes.length, currentIndex );
+						tnqRenderQuote( block, filteredQuotes[ currentIndex ], showCategory );
+						if ( showBackground && pixabayKey && card ) {
+							tnqFetchNatureImage( pixabayKey, function( url ) {
+								tnqApplyBackground( card, url );
+							} );
+						}
+						if ( card ) {
+							card.classList.remove( 'tnq-fading' );
+						}
+					}, 300 );
+				} );
+			}
+		}
+
+		if ( shareBtn && shareDropdown ) {
+			shareBtn.addEventListener( 'click', function( e ) {
+				e.stopPropagation();
+				var isVisible = shareDropdown.style.display !== 'none';
+				shareDropdown.style.display = isVisible ? 'none' : 'block';
+			} );
+		}
+
+		shareOptions.forEach( function( option ) {
+			option.addEventListener( 'click', function( e ) {
+				e.stopPropagation();
+				var platform = option.getAttribute( 'data-platform' );
+				var quote = filteredQuotes[ currentIndex % filteredQuotes.length ];
+				if ( quote ) {
+					tnqShareTo( platform, quote, block );
+				}
+				if ( shareDropdown ) {
+					shareDropdown.style.display = 'none';
+				}
+			} );
+		} );
+
+		document.addEventListener( 'click', function() {
+			if ( shareDropdown ) {
+				shareDropdown.style.display = 'none';
+			}
+		} );
+	} );
+} );
+]]></content>
+  </file>
+  <file path="src/save.js">
+    <description>Save function that stores block attributes as data attributes for the front-end view script.</description>
+    <content><![CDATA[
+import { useBlockProps } from '@wordpress/block-editor';
+
+export default function save( { attributes } ) {
+	const { category, fontSize, textAlign, showCategory, showButton, colorScheme } = attributes;
+
+	const blockProps = useBlockProps.save( {
+		className: `tnq-scheme-${ colorScheme } tnq-size-${ fontSize } tnq-align-${ textAlign }`,
+		'data-category': category,
+		'data-show-category': showCategory ? 'true' : 'false',
+		'data-show-button': showButton ? 'true' : 'false',
+	} );
+
+	return (
+		<div { ...blockProps }>
+			<div className="tnq-quote-card">
+				<div className="tnq-quote-icon" aria-hidden="true">&ldquo;</div>
+				<blockquote className="tnq-quote-text"></blockquote>
+				<div className="tnq-quote-meta">
+					<span className="tnq-quote-author"></span>
+					<span className="tnq-quote-category"></span>
+				</div>
+				<button type="button" className="tnq-new-quote-btn">New Quote</button>
+			</div>
+		</div>
+	);
+}
+]]></content>
+  </file>
+  <file path="src/render.php">
+    <description>Empty since this is a static block.</description>
+    <content><![CDATA[<?php
+/**
+ * Server-side rendering for the Nonduality Spiritual Quotes block.
+ *
+ * @var array    $attributes Block attributes.
+ * @var string   $content    Block content.
+ * @var WP_Block $block      Block instance.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+$category        = isset( $attributes['category'] ) ? $attributes['category'] : 'all';
+$font_size       = isset( $attributes['fontSize'] ) ? $attributes['fontSize'] : 'medium';
+$text_align      = isset( $attributes['textAlign'] ) ? $attributes['textAlign'] : 'center';
+$show_category   = isset( $attributes['showCategory'] ) ? $attributes['showCategory'] : true;
+$show_button     = isset( $attributes['showButton'] ) ? $attributes['showButton'] : true;
+$color_scheme    = isset( $attributes['colorScheme'] ) ? $attributes['colorScheme'] : 'light';
+$show_background = isset( $attributes['showBackground'] ) ? $attributes['showBackground'] : true;
+
+$api_key = get_option( 'tnq_pixabay_api_key', '' );
+
+$extra_classes = sprintf(
+	'tnq-scheme-%s tnq-size-%s tnq-align-%s',
+	esc_attr( $color_scheme ),
+	esc_attr( $font_size ),
+	esc_attr( $text_align )
+);
+
+$wrapper_attributes = get_block_wrapper_attributes( array(
+	'class'               => $extra_classes,
+	'data-category'       => esc_attr( $category ),
+	'data-show-category'  => $show_category ? 'true' : 'false',
+	'data-show-button'    => $show_button ? 'true' : 'false',
+	'data-show-background' => $show_background ? 'true' : 'false',
+	'data-pixabay-key'    => ( $show_background && ! empty( $api_key ) ) ? esc_attr( $api_key ) : '',
+) );
+?>
+<div <?php echo $wrapper_attributes; ?>>
+	<div class="tnq-quote-card">
+		<div class="tnq-bg-image" aria-hidden="true"></div>
+		<div class="tnq-bg-overlay" aria-hidden="true"></div>
+		<div class="tnq-quote-content">
+			<div class="tnq-quote-icon" aria-hidden="true">&ldquo;</div>
+			<blockquote class="tnq-quote-text"></blockquote>
+			<div class="tnq-quote-meta">
+				<span class="tnq-quote-author"></span>
+				<span class="tnq-quote-category"></span>
+			</div>
+			<div class="tnq-quote-actions">
+				<button type="button" class="tnq-new-quote-btn"<?php echo $show_button ? '' : ' style="display:none"'; ?>>New Quote</button>
+				<div class="tnq-share-wrapper">
+					<button type="button" class="tnq-new-quote-btn tnq-share-btn">Share</button>
+					<div class="tnq-share-dropdown" style="display:none">
+						<button type="button" class="tnq-share-option" data-platform="facebook">
+							<span class="tnq-share-icon" aria-hidden="true">&#xf09a;</span>
+							Facebook
+						</button>
+						<button type="button" class="tnq-share-option" data-platform="x">
+							<span class="tnq-share-icon tnq-icon-text" aria-hidden="true">&#x1d54f;</span>
+							X
+						</button>
+						<button type="button" class="tnq-share-option" data-platform="whatsapp">
+							<span class="tnq-share-icon" aria-hidden="true">&#xf232;</span>
+							WhatsApp
+						</button>
+						<button type="button" class="tnq-share-option" data-platform="linkedin">
+							<span class="tnq-share-icon" aria-hidden="true">&#xf0e1;</span>
+							LinkedIn
+						</button>
+						<button type="button" class="tnq-share-option" data-platform="instagram">
+							<span class="tnq-share-icon" aria-hidden="true">&#xf16d;</span>
+							Instagram
+						</button>
+						<button type="button" class="tnq-share-option" data-platform="link">
+							<span class="tnq-share-icon tnq-icon-text" aria-hidden="true">&#128279;</span>
+							Copy Link
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tnq-toast" style="display:none"></div>
+</div>
+]]></content>
+  </file>
+  <file path="package.json">
+    <description>Package configuration for the block plugin.</description>
+    <content><![CDATA[
+{
+	"name": "telex-nonduality-quotes",
+	"version": "0.1.0",
+	"description": "A block that displays curated nonduality and spiritual quotes from traditions including Advaita Vedanta, Buddhism, Taoism, Christian Mysticism, Sufism, and Inspirational.",
+	"author": "Vikas Pandey and The Spiritual Agency®",
+	"license": "GPL-2.0-or-later",
+	"main": "build/index.js",
+	"scripts": {
+		"build": "wp-scripts build",
+		"format": "wp-scripts format",
+		"lint:css": "wp-scripts lint-style",
+		"lint:js": "wp-scripts lint-js",
+		"packages-update": "wp-scripts packages-update",
+		"plugin-zip": "wp-scripts plugin-zip",
+		"start": "wp-scripts start"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.15.0"
+	}
+}
+]]></content>
+  </file>
+</artefact>
