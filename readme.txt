@@ -1,7 +1,7 @@
 
 === Nonduality Spiritual Quotes Block ===
 
-Contributors:      Vikas Pandey, The Spiritual Agency
+Contributors:      Vikas Pandey and The Spiritual Agency®
 Tags:              block, quotes, nonduality, spiritual, wisdom
 Tested up to:      6.8
 Stable tag:        0.1.0
@@ -27,7 +27,7 @@ The Nonduality Spiritual Quotes Block brings timeless wisdom directly into your 
 
 == Installation ==
 
-1. Upload the plugin files to the `/wp-content/plugins/nonduality-quotes` directory, or install the plugin through the WordPress plugins screen directly.
+1. Upload the plugin files to the `/wp-content/plugins/telex-nonduality-quotes` directory, or install the plugin through the WordPress plugins screen directly.
 2. Activate the plugin through the 'Plugins' screen in WordPress.
 3. Add the "Nonduality Spiritual Quotes Block" via the block editor.
 

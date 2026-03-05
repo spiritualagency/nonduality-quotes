@@ -53,27 +53,27 @@ const QUOTES = [
 ];
 
 const CATEGORIES = [
-	{ label: __( 'All Categories', 'nonduality-quotes' ), value: 'all' },
-	{ label: __( 'Advaita Vedanta', 'nonduality-quotes' ), value: 'Advaita Vedanta' },
-	{ label: __( 'Buddhism', 'nonduality-quotes' ), value: 'Buddhism' },
-	{ label: __( 'Taoism', 'nonduality-quotes' ), value: 'Taoism' },
-	{ label: __( 'Christian Mysticism', 'nonduality-quotes' ), value: 'Christian Mysticism' },
-	{ label: __( 'Sufism', 'nonduality-quotes' ), value: 'Sufism' },
-	{ label: __( 'Zen', 'nonduality-quotes' ), value: 'Zen' },
-	{ label: __( 'Inspirational', 'nonduality-quotes' ), value: 'Inspirational' },
+	{ label: __( 'All Categories', 'telex-nonduality-quotes' ), value: 'all' },
+	{ label: __( 'Advaita Vedanta', 'telex-nonduality-quotes' ), value: 'Advaita Vedanta' },
+	{ label: __( 'Buddhism', 'telex-nonduality-quotes' ), value: 'Buddhism' },
+	{ label: __( 'Taoism', 'telex-nonduality-quotes' ), value: 'Taoism' },
+	{ label: __( 'Christian Mysticism', 'telex-nonduality-quotes' ), value: 'Christian Mysticism' },
+	{ label: __( 'Sufism', 'telex-nonduality-quotes' ), value: 'Sufism' },
+	{ label: __( 'Zen', 'telex-nonduality-quotes' ), value: 'Zen' },
+	{ label: __( 'Inspirational', 'telex-nonduality-quotes' ), value: 'Inspirational' },
 ];
 
 const FONT_SIZES = [
-	{ label: __( 'Small', 'nonduality-quotes' ), value: 'small' },
-	{ label: __( 'Medium', 'nonduality-quotes' ), value: 'medium' },
-	{ label: __( 'Large', 'nonduality-quotes' ), value: 'large' },
+	{ label: __( 'Small', 'telex-nonduality-quotes' ), value: 'small' },
+	{ label: __( 'Medium', 'telex-nonduality-quotes' ), value: 'medium' },
+	{ label: __( 'Large', 'telex-nonduality-quotes' ), value: 'large' },
 ];
 
 const COLOR_SCHEMES = [
-	{ label: __( 'Light', 'nonduality-quotes' ), value: 'light' },
-	{ label: __( 'Dark', 'nonduality-quotes' ), value: 'dark' },
-	{ label: __( 'Warm', 'nonduality-quotes' ), value: 'warm' },
-	{ label: __( 'Serene', 'nonduality-quotes' ), value: 'serene' },
+	{ label: __( 'Light', 'telex-nonduality-quotes' ), value: 'light' },
+	{ label: __( 'Dark', 'telex-nonduality-quotes' ), value: 'dark' },
+	{ label: __( 'Warm', 'telex-nonduality-quotes' ), value: 'warm' },
+	{ label: __( 'Serene', 'telex-nonduality-quotes' ), value: 'serene' },
 ];
 
 function getFilteredQuotes( category ) {
@@ -127,39 +127,39 @@ export default function Edit( { attributes, setAttributes } ) {
 				/>
 			</BlockControls>
 			<InspectorControls>
-				<PanelBody title={ __( 'Quote Settings', 'nonduality-quotes' ) }>
+				<PanelBody title={ __( 'Quote Settings', 'telex-nonduality-quotes' ) }>
 					<SelectControl
-						label={ __( 'Category', 'nonduality-quotes' ) }
+						label={ __( 'Category', 'telex-nonduality-quotes' ) }
 						value={ category }
 						options={ CATEGORIES }
 						onChange={ ( value ) => setAttributes( { category: value } ) }
 					/>
 					<ToggleControl
-						label={ __( 'Show Category Label', 'nonduality-quotes' ) }
+						label={ __( 'Show Category Label', 'telex-nonduality-quotes' ) }
 						checked={ showCategory }
 						onChange={ ( value ) => setAttributes( { showCategory: value } ) }
 					/>
 					<ToggleControl
-						label={ __( 'Show New Quote Button', 'nonduality-quotes' ) }
+						label={ __( 'Show New Quote Button', 'telex-nonduality-quotes' ) }
 						checked={ showButton }
 						onChange={ ( value ) => setAttributes( { showButton: value } ) }
 					/>
 					<ToggleControl
-						label={ __( 'Show Nature Background', 'nonduality-quotes' ) }
-						help={ __( 'Requires a Pixabay API key in Settings > Nonduality Quotes.', 'nonduality-quotes' ) }
+						label={ __( 'Show Nature Background', 'telex-nonduality-quotes' ) }
+						help={ __( 'Requires a Pixabay API key in Settings > Nonduality Quotes.', 'telex-nonduality-quotes' ) }
 						checked={ showBackground }
 						onChange={ ( value ) => setAttributes( { showBackground: value } ) }
 					/>
 				</PanelBody>
-				<PanelBody title={ __( 'Appearance', 'nonduality-quotes' ) } initialOpen={ false }>
+				<PanelBody title={ __( 'Appearance', 'telex-nonduality-quotes' ) } initialOpen={ false }>
 					<SelectControl
-						label={ __( 'Font Size', 'nonduality-quotes' ) }
+						label={ __( 'Font Size', 'telex-nonduality-quotes' ) }
 						value={ fontSize }
 						options={ FONT_SIZES }
 						onChange={ ( value ) => setAttributes( { fontSize: value } ) }
 					/>
 					<SelectControl
-						label={ __( 'Color Scheme', 'nonduality-quotes' ) }
+						label={ __( 'Color Scheme', 'telex-nonduality-quotes' ) }
 						value={ colorScheme }
 						options={ COLOR_SCHEMES }
 						onChange={ ( value ) => setAttributes( { colorScheme: value } ) }
@@ -170,7 +170,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				<div className={ `tnq-quote-card${ fading ? ' tnq-fading' : '' }` }>
 					<div className="tnq-quote-icon" aria-hidden="true">&ldquo;</div>
 					<blockquote className="tnq-quote-text">
-						{ quote ? quote.text : __( 'No quotes found for this category.', 'nonduality-quotes' ) }
+						{ quote ? quote.text : __( 'No quotes found for this category.', 'telex-nonduality-quotes' ) }
 					</blockquote>
 					{ quote && (
 						<div className="tnq-quote-meta">
@@ -187,16 +187,16 @@ export default function Edit( { attributes, setAttributes } ) {
 								className="tnq-new-quote-btn"
 								onClick={ handleNewQuote }
 							>
-								{ __( 'New Quote', 'nonduality-quotes' ) }
+								{ __( 'New Quote', 'telex-nonduality-quotes' ) }
 							</button>
 						) }
 						<button
 							type="button"
 							className="tnq-new-quote-btn tnq-share-btn"
 							onClick={ () => {} }
-							title={ __( 'Share', 'nonduality-quotes' ) }
+							title={ __( 'Share', 'telex-nonduality-quotes' ) }
 						>
-							{ __( 'Share', 'nonduality-quotes' ) }
+							{ __( 'Share', 'telex-nonduality-quotes' ) }
 						</button>
 					</div>
 				</div>
