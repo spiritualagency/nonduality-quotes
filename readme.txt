@@ -4,6 +4,7 @@
        height="475" 
        alt="The Spiritual Agency GitHub Banner" />
 </div>
+
 === Nonduality Spiritual Quotes Block ===
 
 Contributors:      Vikas Pandey and The Spiritual Agency®
