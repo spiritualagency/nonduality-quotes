@@ -1,10 +1,3 @@
-<div style="text-align: center;">
-  <img src="https://img.spiritual.agency/i/0tagQq81" 
-       width="1200" 
-       height="475" 
-       alt="GitHub Banner Image" />
-</div>
-
 === Nonduality Spiritual Quotes Block ===
 
 Contributors:      Vikas Pandey and The Spiritual Agency®
