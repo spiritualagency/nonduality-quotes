@@ -2,7 +2,7 @@
   <img src="https://img.spiritual.agency/i/0tagQq81" 
        width="1200" 
        height="475" 
-       alt="Description of your logo or image" />
+       alt="GitHub Banner Image" />
 </div>
 
 === Nonduality Spiritual Quotes Block ===
